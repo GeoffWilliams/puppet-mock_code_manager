@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["geoff@geoffwilliams.me.uk"]
 
   spec.summary       = %q{A mock version of Puppet Code Manager}
-  spec.homepage      = "TODO: Put your gem's website or public repo URL here."
+  spec.homepage      = "https://github.com/GeoffWilliams/puppet-mock_code_manager"
 
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|
     f.match(%r{^(test|spec|features)/})
