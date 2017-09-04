@@ -20,12 +20,12 @@ require 'webrick'
 require 'webrick/log'
 require "webrick/https"
 require 'rack'
+require "json"
 
 
 module MockCodeManager
   RES_DIR = File.join(File.dirname(File.expand_path(__FILE__)), "..", "res")
-  JSON_DIR = File.join(RES_DIR, "json")
-  SSL_DIR = File.join(RES_DIR, "ssl")
+  SSL_DIR = "/tmp/mock_code_manager_ssl"
 
   TOKEN_OK = "PUPPET_DEPLOY_OK"
   TOKEN_ALWAYS_FAIL = "PUPPET_DEPLOY_FAIL"
@@ -34,14 +34,12 @@ module MockCodeManager
   JSON_MISSING_TOKEN={"kind"=>"puppetlabs.rbac/user-unauthenticated", "msg"=>"Route requires authentication"}
   JSON_NO_ENVIRONMENTS_SPECIFIED=[]
 
-
   class MockCodeManager < Sinatra::Base
     post '/code-manager/v1/deploys' do
       json = JSON.parse(request.body.read)
-
-      if json.has_key?("token")
-
-        if json["token"] == TOKEN_OK
+      token = request.env['HTTP_X_AUTHENTICATION']
+      if token
+        if token == TOKEN_OK
 
           # environments must be a non-empty array for code manager to do anything.
           # If missing it returns an empty array []
@@ -70,16 +68,22 @@ module MockCodeManager
 
   module WEBrick
     def self.run!
+      system("#{RES_DIR}/setup_ssl.sh")
+
+      # note - we obtain the fqdn by shelling out rather then doing tricks in ruby
+      # this is for consistency with the openssl calls we already made to generate
+      fqdn = %x(hostname -f).strip
+
       webrick_options = {
+          :Host                 => "0.0.0.0",
           :Port                 => 8170,
           :Logger               => ::WEBrick::Log::new($stdout, ::WEBrick::Log::DEBUG),
           :SSLEnable            => true,
           :force_ssl            => true,
-          :SSLVerifyClient      => OpenSSL::SSL::VERIFY_PEER,
           :SSLCACertificateFile => "#{SSL_DIR}/certs/ca.pem",
-          :SSLCertificate       => OpenSSL::X509::Certificate.new(  File.open("#{SSL_DIR}/certs/localhost.pem").read),
-          :SSLPrivateKey        => OpenSSL::PKey::RSA.new(          File.open("#{SSL_DIR}/private_keys/localhost.pem").read),
-          :SSLCertName          => [ [ "CN",'localhost' ] ]
+          :SSLCertificate       => OpenSSL::X509::Certificate.new(  File.open("#{SSL_DIR}/certs/server.pem").read),
+          :SSLPrivateKey        => OpenSSL::PKey::RSA.new(          File.open("#{SSL_DIR}/private_keys/server.pem").read),
+          :SSLCertName          => [ [ "CN", fqdn] ]
       }
 
       Rack::Handler::WEBrick.run MockCodeManager, webrick_options
