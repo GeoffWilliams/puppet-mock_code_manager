@@ -1,8 +1,8 @@
 # MockCodeManager
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/mock_code_manager`. To experiment with that code, run `bin/console` for an interactive prompt.
+This is a limited mock version of the [Puppet Code Manager REST API](https://docs.puppet.com/pe/latest/code_mgr_scripts.html).
 
-TODO: Delete this and the text above, and describe your gem
+It exists to allow Integration testing of software consuming this service without the need to stand-up a complete working Puppet Enterprise environment
 
 ## Installation
 
@@ -20,16 +20,59 @@ Or install it yourself as:
 
     $ gem install mock_code_manager
 
+## Requirements
+
+* Ruby 2.3+ (use [RVM](https://rvm.io/))
+* openssl
+* Access to `/tmp/mock_code_manager_ssl` for credential storage
+* Hostname as reported by `hostname -f` **must** match the fqdn the service will be accessed from
+* Port 8170 my be avaiable and reachable by the outside world
+
 ## Usage
 
-TODO: Write usage instructions here
+### Simple
 
-## Development
+To generate all required SSL credentials and start a server on port 8170, run the command:
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+```shell
+mock_code_manager
+```
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+Note that this service will terminate when your login shell exits.  To prevent this, use `screen`, `nohup`, etc.
+
+### Ruby
+
+You can use the library as part of your ruby projects if you like.  Something like:
+
+```ruby
+Thread.start { MockCodeManager::WEBrick.run! }
+```
+
+In your `spec_helper.rb` along with a delay/test while the credentials are generated should be enough to get you started.
+
+## API completeness
+
+`/code-manager/v1/deploys`
+* Authentication check
+* Deploy all environments (`deploy-all`)
+* Deploy selected environments (`environments`)
+
+## Authentication
+You must pass authentication tokens using the `X-Authentication` HTTP header.
+
+The service will return an appropriate response based on the value or absence of this header:
+
+### `PUPPET_DEPLOY_OK`
+Proceed to service request
+
+### Absent
+`puppetlabs.rbac/user-unauthenticated`
+
+
+### `PUPPET_DEPLOY_FAIL` (or any other value)
+`puppetlabs.rbac/token-revoked` 
+
+Note that the above responses are **always** expressed as JSON and always with status `200`.
 
 ## Contributing
-
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/mock_code_manager.
+PRs accepted :)
