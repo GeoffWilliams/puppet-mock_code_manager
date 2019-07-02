@@ -11,6 +11,8 @@ Gem::Specification.new do |spec|
 
   spec.summary       = %q{A mock version of Puppet Code Manager}
   spec.homepage      = "https://github.com/GeoffWilliams/puppet-mock_code_manager"
+  spec.license       = "Apache-2.0"
+
 
   spec.files         = `git ls-files -z`.split("\x0").reject do |f|
     f.match(%r{^(test|spec|features)/})
@@ -22,9 +24,11 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "bundler", "~> 2.0"
   spec.add_development_dependency "rake", "~> 12.3"
   spec.add_development_dependency "rspec", "~> 3.8"
+  spec.add_development_dependency "excon", "0.64.0"
 
   spec.add_dependency "sinatra", "2.0.5"
   spec.add_dependency "webrick", "1.4.2"
   spec.add_dependency "rack", "2.0.7"
+  spec.add_dependency "rugged", "~> 0.28.2"
 
 end
