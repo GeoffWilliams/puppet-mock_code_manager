@@ -69,7 +69,7 @@ module MockCodeManager
         if branches.has_key? requested_branch
           if wait
             # in wait mode, sleep for a while to simulate a slow-ish server
-            sleep(1 + rand(10))
+            sleep(1)
             json << {
               "environment"=>requested_branch,
               "id"=>id,
